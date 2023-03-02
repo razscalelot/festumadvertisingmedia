@@ -39,11 +39,35 @@ app.use('/', indexRouter);
 const organizerpaths = [
   { pathUrl: '/', routeFile: 'index' },
   { pathUrl: '/login', routeFile: 'login' },
-  { pathUrl: '/register', routeFile: 'register' }
-]
+  { pathUrl: '/register', routeFile: 'register' },
+  { pathUrl: '/profile', routeFile: 'profile' }
+];
+
+
+const developerpaths = [
+  { pathUrl: '/', routeFile: 'index' },
+  { pathUrl: '/login', routeFile: 'login' },
+  { pathUrl: '/register', routeFile: 'register' },
+  { pathUrl: '/profile', routeFile: 'profile' }
+];
+
+const agentpaths = [
+  { pathUrl: '/', routeFile: 'index' },
+  { pathUrl: '/login', routeFile: 'login' },
+  { pathUrl: '/register', routeFile: 'register' },
+  { pathUrl: '/profile', routeFile: 'profile' }
+];
 
 organizerpaths.forEach((path) => {
   app.use('/organizer' + path.pathUrl, require('./routes/organizers/' + path.routeFile));
+});
+
+developerpaths.forEach((path) => {
+  app.use('/developer' + path.pathUrl, require('./routes/developers/' + path.routeFile));
+});
+
+agentpaths.forEach((path) => {
+  app.use('/agent' + path.pathUrl, require('./routes/agents/' + path.routeFile));
 });
 
 

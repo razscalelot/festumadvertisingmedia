@@ -27,6 +27,7 @@ router.post('/', async (req, res) => {
                 mobile: mobile,
                 country_code: country_code,
                 password: encPassword,
+                profilepic: null,
                 refer_code: refer_code,
                 my_refer_code: my_referCode,
                 fcm_token: fcm_token,
@@ -71,6 +72,47 @@ router.post('/verifyotp', async (req, res) => {
         }
     } else {
         return responseManager.badrequest({ message: 'Invalid otp or mobile number to verify organizer mobile number, please try again' }, res);
+    }
+});
+router.post('/forgotpassword', async (req, res) => {
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type,Authorization');
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    const { mobile } = req.body;
+    if (mobile && mobile.trim() != '' && mobile.length == 10) {
+        let primary = mongoConnection.useDb(constants.DEAFULT_DB);
+        let checkExisting = await primary.model(constants.MODELS.organizers, organizerModel).findOne({ mobile: mobile }).lean();
+        if (checkExisting) {
+            const url = process.env.FACTOR_URL + mobile + "/AUTOGEN";
+            let otpSend = await axios.get(url, config);
+            if (otpSend.data.Details) {
+                await primary.model(constants.MODELS.organizers, organizerModel).findByIdAndUpdate(checkExisting._id, { otpVerifyKey: otpSend.data.Details });
+                return responseManager.onSuccess('Organizer mobile identified and otp sent successfully!', { key: otpSend.data.Details }, res);
+            } else {
+                return responseManager.onSuccess('Something went wrong, unable to send otp for given mobile number, please try again!', 0, res);
+            }
+        } else {
+            return responseManager.badrequest({ message: 'Invalid organizer mobile number, Please try again...' }, res);
+        }
+    } else {
+        return responseManager.badrequest({ message: 'Invalid mobile number, please try again' }, res);
+    }
+});
+router.post('/changepassword', async (req, res) => {
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type,Authorization');
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    const { password, mobile } = req.body;
+    if (password && password.trim() != '' && password.length >= 6 && mobile && mobile.length == 10) {
+        let primary = mongoConnection.useDb(constants.DEAFULT_DB);
+        let organizerData = await primary.model(constants.MODELS.organizers, organizerModel).findOne({ mobile: mobile }).lean();
+        if (organizerData) {
+            let encpassword = await helper.passwordEncryptor(password);
+            await primary.model(constants.MODELS.organizers, organizerModel).findByIdAndUpdate(organizerData._id, { password: encpassword });
+            return responseManager.onSuccess('Organizer password changed successfully!', 1, res);
+        } else {
+            return responseManager.badrequest({ message: 'Invalid organizer mobile number, please try again' }, res);
+        }
+    } else {
+        return responseManager.badrequest({ message: 'Invalid data to change organizer password, please try again' }, res);
     }
 });
 module.exports = router;
