@@ -33,22 +33,88 @@ router.post('/', async (req, res) => {
                 fcm_token: fcm_token,
                 is_approved: true,
                 status: true,
-                mobileverified: true,
+                mobileverified: false,
+                user_type: 'developer'
             };
-            const url = process.env.FACTOR_URL + mobile + "/AUTOGEN";
-            let otpSend = await axios.get(url, config);
-            if (otpSend.data.Details) {
-                obj.otpVerifyKey = otpSend.data.Details;
-                await primary.model(constants.MODELS.developers, developerModel).create(obj);
-                return responseManager.onSuccess('Developer register successfully!', { key: otpSend.data.Details }, res);
-            } else {
-                return responseManager.onSuccess('Something went wrong, unable to send otp for given mobile number, please try again!', 0, res);
-            }
+            // const url = process.env.FACTOR_URL + mobile + "/AUTOGEN";
+            // let otpSend = await axios.get(url, config);
+            // if (otpSend.data.Details) {
+            obj.otpVerifyKey = '1234';
+            await primary.model(constants.MODELS.developers, developerModel).create(obj);
+            return responseManager.onSuccess('Developer register successfully!', { key: '1234' }, res);
+            // } else {
+            //     return responseManager.onSuccess('Something went wrong, unable to send otp for given mobile number, please try again!', 0, res);
+            // }
         } else {
             return responseManager.badrequest({ message: 'Invalid data to register developer, please try again' }, res);
         }
     } else {
         return responseManager.badrequest({ message: 'Invalid data to register developer, please try again' }, res);
+    }
+});
+router.post('/verifyotp', async (req, res) => {
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type,Authorization');
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    let primary = mongoConnection.useDb(constants.DEAFULT_DB);
+    const { mobile, otp, key } = req.body;
+    if (mobile && mobile.length == 10 && otp && otp.trim() != '' && otp.length == 4 && key && key.trim() != '') {
+        let developerData = await primary.model(constants.MODELS.developers, developerModel).findOne({ mobile: mobile, otpVerifyKey: key }).lean();
+        if (developerData) {
+            // const url = process.env.FACTOR_URL + "VERIFY/" + key + "/" + otp;
+            // let verifiedOTP = await axios.get(url, config);
+            // if (verifiedOTP.data.Status == 'Success') {
+            if (otp == '1234' && key == '1234') {
+                await primary.model(constants.MODELS.developers, developerModel).findByIdAndUpdate(developerData._id, { mobileverified: true });
+                return responseManager.onSuccess('Developer mobile number verified successfully!', 1, res);
+            } else {
+                return responseManager.badrequest({ message: 'Invalid OTP, please try again' }, res);
+            }
+        } else {
+            return responseManager.badrequest({ message: 'Invalid data to verify developer mobile number, please try again' }, res);
+        }
+    } else {
+        return responseManager.badrequest({ message: 'Invalid otp or mobile number to verify developer mobile number, please try again' }, res);
+    }
+});
+router.post('/forgotpassword', async (req, res) => {
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type,Authorization');
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    const { mobile } = req.body;
+    if (mobile && mobile.trim() != '' && mobile.length == 10) {
+        let primary = mongoConnection.useDb(constants.DEAFULT_DB);
+        let checkExisting = await primary.model(constants.MODELS.developers, developerModel).findOne({ mobile: mobile }).lean();
+        if (checkExisting) {
+            // const url = process.env.FACTOR_URL + mobile + "/AUTOGEN";
+            // let otpSend = await axios.get(url, config);
+            // if (otpSend.data.Details) {
+            await primary.model(constants.MODELS.developers, developerModel).findByIdAndUpdate(checkExisting._id, { otpVerifyKey: '1234' });
+            return responseManager.onSuccess('Developer mobile identified and otp sent successfully!', { key: '1234' }, res);
+            // } else {
+            //     return responseManager.onSuccess('Something went wrong, unable to send otp for given mobile number, please try again!', 0, res);
+            // }
+        } else {
+            return responseManager.badrequest({ message: 'Invalid developer mobile number, Please try again...' }, res);
+        }
+    } else {
+        return responseManager.badrequest({ message: 'Invalid mobile number, please try again' }, res);
+    }
+});
+router.post('/changepassword', async (req, res) => {
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type,Authorization');
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    const { password, mobile } = req.body;
+    if (password && password.trim() != '' && password.length >= 6 && mobile && mobile.length == 10) {
+        let primary = mongoConnection.useDb(constants.DEAFULT_DB);
+        let developerData = await primary.model(constants.MODELS.developers, developerModel).findOne({ mobile: mobile }).lean();
+        if (developerData) {
+            let encpassword = await helper.passwordEncryptor(password);
+            await primary.model(constants.MODELS.developers, developerModel).findByIdAndUpdate(developerData._id, { password: encpassword });
+            return responseManager.onSuccess('Developer password changed successfully!', 1, res);
+        } else {
+            return responseManager.badrequest({ message: 'Invalid developer mobile number, please try again' }, res);
+        }
+    } else {
+        return responseManager.badrequest({ message: 'Invalid data to change developer password, please try again' }, res);
     }
 });
 module.exports = router;

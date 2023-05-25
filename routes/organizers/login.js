@@ -9,11 +9,11 @@ const mongoose = require('mongoose');
 router.post('/', async (req, res) => {
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type,Authorization');
     res.setHeader('Access-Control-Allow-Origin', '*');
-    const { mobile, password } = req.body;
+    const { user_type, mobile, password } = req.body;
     if (mobile && mobile.length == 10 && password && password.length >= 6) {
         let primary = mongoConnection.useDb(constants.DEAFULT_DB);
         let organizerData = await primary.model(constants.MODELS.organizers, organizerModel).findOne({ mobile: mobile, is_approved: true, status: true, mobileverified: true }).lean();
-        if (organizerData && organizerData != null) {
+        if (organizerData && organizerData != null && user_type == organizerData.user_type) {
             let decPassword = await helper.passwordDecryptor(organizerData.password);
             if (decPassword == password) {
                 let accessToken = await helper.generateAccessToken({ organizerid: organizerData._id.toString() });
