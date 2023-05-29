@@ -4,6 +4,9 @@ let constants = {
         organizers: 'organizers',
         developers: 'developers',
         agents: 'agents',
+        advertisements: 'advertisements',
+        slides: 'slides',
+        superadmins: 'superadmins'
     }
 };
 module.exports = constants

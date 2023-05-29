@@ -36,11 +36,17 @@ mongoose.connection.once('open', () => {
 
 app.use('/', indexRouter);
 
+const superadminpaths = [
+  { pathUrl: '/login', routeFile: 'login' },
+  { pathUrl: '/slide', routeFile: 'slide' },
+];
+
 const organizerpaths = [
   { pathUrl: '/', routeFile: 'index' },
   { pathUrl: '/login', routeFile: 'login' },
   { pathUrl: '/register', routeFile: 'register' },
-  { pathUrl: '/profile', routeFile: 'profile' }
+  { pathUrl: '/profile', routeFile: 'profile' },
+  { pathUrl: '/advertisement', routeFile: 'advertisements' }
 ];
 
 
@@ -57,6 +63,9 @@ const agentpaths = [
   { pathUrl: '/register', routeFile: 'register' },
   { pathUrl: '/profile', routeFile: 'profile' }
 ];
+superadminpaths.forEach((path) => {
+  app.use('/superadmin' + path.pathUrl, require('./routes/superadmins/' + path.routeFile));
+});
 
 organizerpaths.forEach((path) => {
   app.use('/organizer' + path.pathUrl, require('./routes/organizers/' + path.routeFile));
@@ -70,7 +79,13 @@ agentpaths.forEach((path) => {
   app.use('/agent' + path.pathUrl, require('./routes/agents/' + path.routeFile));
 });
 
-
+// const helper = require('./utilities/helper');
+// app.get("/encrypet", async (req,res) => {
+//   let str = '123456789';
+//   let encPass = await helper.passwordEncryptor(str);
+//   console.log('encPass', encPass);
+//   res.json({encPass : encPass});
+// });
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
